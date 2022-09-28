@@ -22,20 +22,44 @@ setup <- function() {
 
 # Data Import
 data_import <- function() {
-  pbp_data <- read.csv("./Data/pbp_data.csv")
+  opp_data <- read.csv("./Data/pbp_data.csv")
+  lineup_data <- read.csv("./Data/pbp_data2.csv")
 }
 
-baseline <- pbp_data %>%
-  filter(Center == "Overall") %>%
-  select(X3PAr, TS., Rim.or.3.Freq, Shot.Quality, Rim.Freq, C3.Freq, AST2.Pts, UAST2.2s.Pts, AST3.Pts, UAST3.Pts)
-  
-pbp_data %>%
-  filter(Center != "Overall") %>%
+# Comparing league average stats to Switch 5 unit stats
+baseline <- opp_data %>%
+  mutate(ThreePointRate = as.numeric(str_remove(X3PAr, "%")) / 100,
+         RimFreq = as.numeric(str_remove(Rim.Freq, "%")) / 100,
+         ASTRate = (AST2.Pts + AST3.Pts) / (AST2.Pts + AST3.Pts + UAST2.2s.Pts + UAST3.Pts),
+         TwoASTRate = AST2.Pts / (UAST2.2s.Pts + AST2.Pts),
+         ThreeASTRate = AST3.Pts / (UAST3.Pts + AST3.Pts)) %>%
+  select(ThreePointRate, RimFreq, ASTRate, TwoASTRate, ThreeASTRate)
+
+baseline_2 <- lineup_data %>%
+  mutate(DREBRate = as.numeric(str_remove(FG.DReb., "%")) / 100,
+         OREBRate = as.numeric(str_remove(FG.OReb., "%")) / 100) %>%
+  select(DREBRate, OREBRate)
+
+switch_5_stats <- opp_data %>%
   summarize(ThreePointRate = sum(FG3A) / (sum(FG2A) + sum(FG3A)),
             RimFreq = sum(Rim.FGA) / (sum(FG2A) + sum(FG3A)),
             ASTRate = (sum(AST2.Pts) + sum(AST3.Pts)) / (sum(AST2.Pts) + sum(AST3.Pts) + sum(UAST2.2s.Pts) + sum(UAST3.Pts)),
             TwoASTRate = sum(AST2.Pts) / (sum(UAST2.2s.Pts) + sum(AST2.Pts)),
             ThreeASTRate = sum(AST3.Pts) / (sum(UAST3.Pts) + sum(AST3.Pts)))
+
+switch_5_stats_2 <- opp_data %>%
+  filter(Center != "Overall") %>%
+  mutate(DREB_Opps = DReb / (as.numeric(str_remove(FG.DReb., "%")) / 100),
+         OREB_Opps = OReb / (as.numeric(str_remove(FG.OReb., "%")) / 100)) %>%
+  summarize(DREBRate = sum(DReb) / sum(DREB_Opps),
+            OREBRate = sum(OReb) / sum(OREB_Opps))
+  
+
+
+
+
+
+
 
 colourer2 <- col_numeric(
   palette = c("purple", "white", "purple"),
