@@ -1,7 +1,7 @@
 # Switch 5 ----- Part 1
 
 # Setup
-setup <- function() {
+setup = {
   # Loading libraries
   library(tidyverse)
   library(ggpubr)
@@ -22,7 +22,7 @@ setup <- function() {
 }
 
 # Data Import
-data_import <- function() {
+data_import = {
   # Importing data from Second Spectrum csv's
   Switch_Pick_Data <- read.csv("./Data/Switch_All_Games.csv") %>% 
     left_join(., read.csv("./Data/Picks_All_Games.csv"), by = c("Screener.Defender", "Season")) %>%
@@ -64,7 +64,7 @@ data_import <- function() {
 }
 
 # Switch Rate by Season Trends
-switch_rate_by_season <- function() {
+switch_rate_by_season = {
   
   # Visualizing Switch Rate at the season level
   annotation <- data.frame(
@@ -109,7 +109,7 @@ switch_rate_by_season <- function() {
 }
 
 # Switch vs. No Switch trends
-switch_v_no_switch <- function() {
+switch_v_no_switch = {
   p_data <- rbind(Switch, No_Switch) %>% mutate(Type = as.factor(Type))
 
   p1 <- p_data %>%
@@ -150,7 +150,7 @@ switch_v_no_switch <- function() {
 }
 
 # Lineup Composition
-lineup_comp <- function() {
+lineup_comp = {
   LineupComp <- rbind(Big, Small)
   
   LineupComp %>%
