@@ -113,7 +113,7 @@ switch_v_no_switch = {
   p_data <- rbind(Switch, No_Switch) %>% mutate(Type = as.factor(Type))
 
   p1 <- p_data %>%
-    ggplot(aes(x = Season, y = BHR.FGA.Per.Direct.Pick)) +
+    ggplot(aes(x = Season, y = Ballhandler.FGA.Per.Direct.Pick)) +
     geom_line(aes(color = Type, linetype = Type, group = Type)) + 
     scale_color_manual(values = c("darkred", "steelblue")) +
     theme_clean() +
@@ -121,7 +121,7 @@ switch_v_no_switch = {
     ylim(0, 1)
   
   p2 <- p_data %>%
-    ggplot(aes(x = Season, y = BHR.PASS.Per.Direct.Pick)) +
+    ggplot(aes(x = Season, y = Ballhandler.PASS.Per.Direct.Pick)) +
     geom_line(aes(color = Type, linetype = Type, group = Type)) + 
     scale_color_manual(values = c("darkred", "steelblue")) +
     theme_clean() +
@@ -155,7 +155,7 @@ lineup_comp = {
   
   LineupComp %>%
     ggplot(aes(x = Season, color = LineupType, group = LineupType)) +
-    geom_line(aes(y = qSP)) + 
+    geom_line(aes(y = qSQ)) + 
     theme_clean() +
     ylab("Shot Quality Surrendered by Defense") +
     ggtitle("Big or Small, Lineups are Giving Up Better Looks")
@@ -168,9 +168,9 @@ lineup_comp = {
     autofit() %>%
     add_header_lines("Most Used Small Lineups (17-18 Playoffs)") %>%
     theme_zebra() %>%
-    align(align = "center", part = "header") %>%
-    border_outer() %>%
-    border_inner() %>%
+    color(part = "header", i = 1, color = "white") %>%
+    italic(part = "header", i = 1) %>%
+    align(align = "center", part = "body", j = 2:4) %>%
     bg(bg = colourer, j = "DER", part = "body")
   
   myft
