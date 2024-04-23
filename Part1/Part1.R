@@ -145,7 +145,7 @@ switch_v_no_switch = {
     ylim(0, 1)
   
   # Combining the plots
-  plot <- ggarrange(p1, p2, p3, p4, ncol = 2, nrow = 2,common.legend = TRUE, legend = "bottom")
+  plot <- ggarrange(p1, p2, p3, p4, ncol = 2, nrow = 2, common.legend = TRUE, legend = "bottom")
   annotate_figure(plot, top = "NBA Players Got Good at Using Screens")
 }
 

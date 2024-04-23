@@ -4,6 +4,7 @@
 setup = {
   # Loading libraries
   library(tidyverse)
+  library(ggpubr)
   library(flextable)
   library(scales)
   
@@ -22,6 +23,7 @@ setup = {
 
 # Data Import
 data_import = {
+  
   # Importing Playoff Switch data
   Playoff_Switch_Pick_Data <- read.csv("./Data/Switch_Playoff_Games.csv") %>% 
     left_join(., read.csv("./Data/Picks_Playoff_Games.csv"), by = c("Screener.Defender", "Season")) %>%
@@ -38,54 +40,63 @@ data_import = {
   
   # Importing league rankings data
   League_Rankings <- read.csv("./Data/League_Rankings.csv")
+  
+  # Importing team SQ stats by season
+  Team_SQ <- read.csv("./Data/Team_SQ.csv") %>%
+    mutate(Team = Defensive.Team)
+  
 }
 
 # Fitness Stats
 fitness_stats = {
   
-  # Extracting the top 5 (6) of switched screens
-  Playoff_Switch_Pick_Data %>%
-    arrange(desc(Switches)) %>%
-    slice(1:6)
-  
-  # Extracting the bottom 5 of switch rate
-  Playoff_Switch_Pick_Data %>%
-    arrange(SwitchRate) %>%
-    slice(1:5)
-  
-  # Comparing the fitness of the two groups
-  Fitness_Data %>%
-    mutate(Distance_Per_Min = (Total.Distance..mi..Per.Game / Minutes.Per.Game) * 36,
-           Load_Per_Min = (Total.Load.Per.Game / Minutes.Per.Game) * 36) %>%
-    select(1:3, Distance_Per_Min, Load_Per_Min)
-  
   fit_plot <- Fitness_Data %>%
-    mutate(Distance_Per_36 = (Total.Distance..mi..Per.Game / Minutes.Per.Game) * 36,
-           Load_Per_36 = (Total.Load.Per.Game / Minutes.Per.Game) * 36) %>%
-    group_by(Switch.Freq) %>%
-    summarize(Distance_Avg = mean(Distance_Per_36),
-              Load_Avg = mean(Load_Per_36))
+    left_join(., Playoff_Switch_Pick_Data, by = c("Player" = "Screener.Defender" ,"Season")) %>%
+    filter(TotalScreens > 100) %>%
+    mutate(Switch_Freq = ifelse(SwitchRate > 0.15, "High", "Low"))
   
-  fit_plot %>%
-    ggplot(aes(x = Switch.Freq, y = Distance_Avg)) +
-    geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "lightblue") +
+  p1 <- fit_plot %>%
+    ggplot(aes(x = Switch_Freq, y = Total.Distance..mi..Per.36.Minutes, fill = Switch_Freq)) +
+    geom_boxplot() +
+    geom_jitter(color="black", size=0.4, alpha=0.9) +
     theme_clean() +
-    theme(axis.title =  element_text(size = 15)) +
-    theme(legend.title = element_blank()) +
-    theme(legend.text = element_text(size = 12)) +
-    xlab("Player Switch Frequency") +
-    ylab("Average Distance Traveled Per 36 Minutes")
+    ylab("Distance Traveled Per 36 Minutes") +
+    theme(axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
   
-  fit_plot %>%
-    ggplot(aes(x = Switch.Freq, y = Load_Avg)) +
-    geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "pink") +
+  p2 <- fit_plot %>%
+    ggplot(aes(x = Switch_Freq, y = Load.Slow.Per.36.Minutes, fill = Switch_Freq)) +
+    geom_boxplot() +
+    geom_jitter(color="black", size=0.4, alpha=0.9) +
     theme_clean() +
-    theme(axis.title =  element_text(size = 15)) +
-    theme(legend.title = element_blank()) +
-    theme(legend.text = element_text(size = 12)) +
-    xlab("Player Switch Frequency") +
-    ylab("Average Load Per 36 Minutes")
+    ylab("Slow Load Per 36 Minutes") +
+    theme(axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
   
+  p3 <- fit_plot %>%
+    ggplot(aes(x = Switch_Freq, y = Load.Medium.Per.36.Minutes, fill = Switch_Freq)) +
+    geom_boxplot() +
+    geom_jitter(color="black", size=0.4, alpha=0.9) +
+    theme_clean() +
+    ylab("Medium Load Per 36 Minutes") +
+    theme(axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
+  
+  p4 <- fit_plot %>%
+    ggplot(aes(x = Switch_Freq, y = Load.Fast.Per.36.Minutes, fill = Switch_Freq)) +
+    geom_boxplot() +
+    geom_jitter(color="black", size=0.4, alpha=0.9) +
+    theme_clean() +
+    ylab("Fast Load Per 36 Minutes") +
+    theme(axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
+  
+  plot <- ggarrange(p1, p2, p3, p4, ncol = 2, nrow = 2, common.legend = TRUE, legend = "bottom")
+  annotate_figure(plot, top = "Switching is Hard")
   
 }
 
@@ -97,15 +108,37 @@ def_rating_analysis = {
     left_join(., League_Rankings, by = c("Season", "Team"))
   
   def_plot %>%
-    ggplot(aes(x = Defense, y = Picks)) +
+    ggplot(aes(x = Defense, y = Picks.Per.100.Possessions)) +
     geom_point() +
     xlab("Defensive Rating") +
-    ylab("Switches")
+    ylab("Switches Per 100 Possessions") +
+    ggtitle("Great Regular Season Defenses Don't Need to Switch") +
+    theme(plot.title = element_text(size = 15, face = "bold"))
   
-  cor(def_plot$Picks, def_plot$Defense)
+  cor(def_plot$Picks.Per.100.Possessions, def_plot$Defense)
   
-  League_Rankings %>%
+  def_table <- League_Rankings %>%
     arrange(Defense) %>%
-    select(Season, Team, Defense)
+    select(Season, Team, Defense) %>%
+    slice(1:10)
+    
+  flextable(def_table) %>%
+    autofit() %>%
+    add_header_lines("Best Defensive Teams Since 2017") %>%
+    theme_zebra() %>%
+    color(part = "header", i = 1, color = "white") %>%
+    italic(part = "header", i = 1)
+
+  def_plot2 <- Team_SQ %>%
+    left_join(., League_Rankings, by = c("Season", "Team"))
   
+  def_plot2 %>%
+    ggplot(aes(x = Defense, y = qSQ)) +
+    geom_point() +
+    xlab("Defensive Rating") +
+    ylab("Shot Quality Surrendered") +
+    ggtitle("Shot Quality Defense Seems to Matter in the Regular Season") +
+    theme(plot.title = element_text(size = 15, face = "bold"))
+
+  cor(def_plot2$qSQ, def_plot2$Defense)
 }
